@@ -1,70 +1,197 @@
-# Getting Started with Create React App
+Project: Node.js Backend & React Frontend Deployment using Docker and GitHub Actions
+1. Overview
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project demonstrates a full-stack application deployment using Docker and GitHub Actions CI/CD workflow. The application consists of:
 
-## Available Scripts
+Frontend: ReactJS app served using Nginx.
 
-In the project directory, you can run:
+Backend: Node.js API server connecting to MongoDB Atlas.
 
-### `npm start`
+The deployment workflow is automated using GitHub Actions, with Docker images published to Docker Hub and deployed to a self-hosted server.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+2. Architecture
+2.1 Stack
+Component	Technology	Purpose
+Frontend	ReactJS, Nginx	Client-side web application
+Backend	Node.js, Express	REST API server
+Database	MongoDB Atlas	Cloud database
+CI/CD	GitHub Actions	Build, test, and deploy Docker images
+Containerization	Docker	Package applications for deployment
 
-### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2.2 CI/CD Workflow Flowchart
 
-### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+flowchart TD
+    A[Push to main branch] --> B[GitHub Actions CI/CD]
+    B --> C[Build Frontend Docker Image]
+    B --> D[Build Backend Docker Image]
+    C --> E[Push Frontend Image to Docker Hub]
+    D --> F[Push Backend Image to Docker Hub]
+    E --> G[Deploy Frontend to Server]
+    F --> H[Deploy Backend to Server]
+    G --> I[ReactJS App Running on Port 3000]
+    H --> J[Node.js App Running on Port 4000]
+    I --> K[Users Access Frontend]
+    J --> L[Frontend Connects to Backend API]
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. GitHub Actions Workflow
 
-### `npm run eject`
+ 3.1 Frontend Deployment Workflow
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+ name: Deploy Node Application
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+on: 
+  push:
+    branches:
+      - main
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin   
+      - name: Build Docker Image
+        run: docker build -t meghadumbre/reactjs-app \
+             --build-arg REACT_APP_NODE_ENV='production' \
+             --build-arg REACT_APP_SERVER_BASE_URL='${{ secrets.REACT_APP_SERVER_BASE_URL }}' .
+      - name: Publish Image to Docker Hub
+        run: docker push meghadumbre/reactjs-app:latest 
+  deploy:
+    needs: build
+    runs-on: self-hosted 
+    steps:
+      - name: Pull Image from Docker Hub
+        run: docker pull meghadumbre/reactjs-app:latest 
+      - name: Delete Old Container
+        run: docker rm -f reactjs-app-container
+      - name: Run Docker Container
+        run: docker run -d -p 3000:80 --name reactjs-app-container meghadumbre/reactjs-app
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+3.2 Backend Deployment Workflow
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+name: Deploy Node Application
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+on: 
+  push:
+    branches:
+      - main
 
-### Code Splitting
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+      - name: Build Docker Image
+        run: docker build -t meghadumbre/nodejs-app .
+      - name: Publish Image to Docker Hub
+        run: docker push meghadumbre/nodejs-app:latest 
+  deploy:
+    needs: build
+    runs-on: self-hosted 
+    steps:
+      - name: Pull Image from Docker Hub
+        run: docker pull meghadumbre/nodejs-app:latest 
+      - name: Delete Old Container
+        run: docker rm -f nodejs-app-container  
+      - name: Run Docker Container
+        run: docker run -d -p 4000:4000 --name nodejs-app-container -e MONGO_PASSWORD='${{ secrets.MONGO_PASSWORD }}' meghadumbre/nodejs-app
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-### Analyzing the Bundle Size
+4. Dockerfile Structure
+5.  4.1 Frontend Dockerfile
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-### Making a Progressive Web App
+   # Build Stage
+FROM node:alpine3.18 as build
+ARG REACT_APP_NODE_ENV
+ARG REACT_APP_SERVER_BASE_URL
+ENV REACT_APP_NODE_ENV=$REACT_APP_NODE_ENV
+ENV REACT_APP_SERVER_BASE_URL=$REACT_APP_SERVER_BASE_URL
+WORKDIR /app
+COPY package.json . 
+RUN npm install
+COPY . . 
+RUN npm run build
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+# Production Stage
+FROM nginx:1.23-alpine
+WORKDIR /usr/share/nginx/html
+RUN rm -rf *
+COPY --from=build /app/build .
+EXPOSE 80
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
-### Advanced Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+4.2 Backend Dockerfile
 
-### Deployment
+FROM node:alpine3.18
+WORKDIR /app
+COPY package.json ./ 
+RUN npm install
+COPY . . 
+EXPOSE 4000
+CMD ["npm", "run", "start"]
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
-### `npm run build` fails to minify
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+5. Deployment Flow
+
+Developer pushes code to main branch.
+
+GitHub Actions triggers CI/CD workflow.
+
+Frontend and backend Docker images are built and pushed to Docker Hub.
+
+Self-hosted server pulls the latest Docker images.
+
+Old containers are removed.
+
+New containers are run with environment variables for configuration.
+
+Frontend is accessible on port 3000, backend on port 4000.
+
+
+6. Diagram
+
+
+           +------------------+
+        | Developer Pushes |
+        +--------+---------+
+                 |
+                 v
+        +------------------+
+        | GitHub Actions CI|
+        +---+----------+---+
+            |          |
+            v          v
+   +----------------+ +----------------+
+   | Build Frontend | | Build Backend  |
+   +-------+--------+ +--------+-------+
+           |                 |
+           v                 v
+  +----------------+  +----------------+
+  | Docker Hub Repo|  | Docker Hub Repo|
+  +-------+--------+  +--------+-------+
+           |                 |
+           v                 v
+   +----------------+  +----------------+
+   | Deploy Frontend|  | Deploy Backend |
+   +----------------+  +----------------+
+           |                 |
+           v                 v
+       Users Access Frontend & Backend
+
+
+https://chatgpt.com/s/m_68ce3472926c8191a2b4b65f1304020e
+
+![Uploading image.png…]()
