@@ -1,24 +1,24 @@
-FROM node:alphine3.18 as build 
+FROM node:alpine3.18 as build
 
-# Declare build time enviroment variable
+# Declare build time environment variables
 ARG REACT_APP_NODE_ENV
 ARG REACT_APP_SERVER_BASE_URL
 
-# Set default value for enviroment variable 
-ENV REACT_APP_NODE_ENV=${REACT_APP_NODE_ENV}
-ENV REACT_APP_SERVER_BASE_URL=${REACT_APP_SERVER_BASE_URL}
+# Set default values for environment variables
+ENV REACT_APP_NODE_ENV=$REACT_APP_NODE_ENV
+ENV REACT_APP_SERVER_BASE_URL=$REACT_APP_SERVER_BASE_URL
 
-# Build the app 
+# Build App
 WORKDIR /app
 COPY package.json .
 RUN npm install
 COPY . .
-RUN npm run build 
+RUN npm run build
 
-# Serve the app with nginx server
-FROM nginx:1.23-alphine
+# Serve with Nginx
+FROM nginx:1.23-alpine
 WORKDIR /usr/share/nginx/html
-RUN rm -rf ./*
+RUN rm -rf *
 COPY --from=build /app/build .
-EXPOSE 80                           
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+EXPOSE 80
+ENTRYPOINT [ "nginx", "-g", "daemon off;" ]
