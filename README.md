@@ -192,6 +192,4 @@ Frontend is accessible on port 3000, backend on port 4000.
        Users Access Frontend & Backend
 
 
-https://chatgpt.com/s/m_68ce3472926c8191a2b4b65f1304020e
 
-![Uploading image.png…]()
