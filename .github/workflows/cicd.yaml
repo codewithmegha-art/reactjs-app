@@ -28,9 +28,9 @@ jobs:
       # Install Gitlekas
       - name: Install Gitleaks
         run: |
-         wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64
-         chmod +x gitleaks-linux-amd64
-         sudo mv gitleaks-linux-amd64 /usr/local/bin/gitleaks
+         wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_$(uname -s)_x64.tar.gz
+         tar -xvzf gitleaks_$(uname -s)_x64.tar.gz
+         sudo mv gitleaks /usr/local/bin/
 
       - name: Scan for gitleaks
         run: gitleaks detect --not-git 
