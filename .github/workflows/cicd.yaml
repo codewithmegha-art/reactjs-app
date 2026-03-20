@@ -25,9 +25,9 @@ jobs:
       - name: Install Dependanices
         run: npm ci 
 
-      # 🔐 Gitleaks scan
+    # 🔐 Gitleaks scan
       - name: Run Gitleaks scan
-        run: gitleaks detect --source . --no-git
+        uses: gitleaks/gitleaks-action@v2
 
 
             # STEP 4: Install Trivy
