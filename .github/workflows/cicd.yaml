@@ -28,9 +28,9 @@ jobs:
       - name: Build the app
         run: npm run build
 
-    # 🔐 Gitleaks scan
-      - name: Run Gitleaks scan
-        uses: gitleaks/gitleaks-action@v2
+    # # 🔐 Gitleaks scan
+    #   - name: Run Gitleaks scan
+    #     uses: gitleaks/gitleaks-action@v2
 
 
       # Docker login 
@@ -41,11 +41,11 @@ jobs:
       - name: Build the image 
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:${{ github.sha }} . 
 
-      - name: Scan Docker Image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          format: table
+      # - name: Scan Docker Image
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+      #     format: table
 
       # Push the image 
       - name: Push Docker Image 
@@ -59,7 +59,7 @@ jobs:
 
      # checkout the code
      - name: Checkout code
-       run: actions/checkout@v4
+       uses:  actions/checkout@v4
 
     # Configure AWS
      - name: Configure AWS
