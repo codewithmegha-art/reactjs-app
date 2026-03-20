@@ -39,9 +39,12 @@ jobs:
       - name: Build the image 
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:${{ github.sha }} . 
 
-        # Trivy Scan
       - name: Scan Docker Image
-        run:  trivy image --scanners vuln ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:${{ github.sha }}
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+           image-ref: ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+           format: table
+           exit-code: '0'
 
       # Push the image 
       - name: Push Docker Image 
