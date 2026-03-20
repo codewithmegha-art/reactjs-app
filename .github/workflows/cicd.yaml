@@ -64,7 +64,7 @@ jobs:
       - name: Push Docker Image 
         run: docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:${{ github.sha }}
 
- deploy:
+  deploy:
    needs: build-and-scan
    runs-on: ubuntu-latest
 
