@@ -6,7 +6,7 @@ on:
 
 
 env:
-  IMAGE_NAME: react-app
+  IMAGE_NAME: react-apps
 
 jobs:
   build-and-scan:
@@ -49,7 +49,9 @@ jobs:
 
       # Push the image 
       - name: Push Docker Image 
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:${{ github.sha }}
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/$IMAGE_NAME:latest
 
   deploy:
    needs: build-and-scan
