@@ -18,6 +18,6 @@ spec:
     spec:
       containers:
       - name: react-app
-        image: meghadumbre/react-apps:latest
+        image: meghadumbre/react-app:latest
         ports:
         - containerPort: 3000
